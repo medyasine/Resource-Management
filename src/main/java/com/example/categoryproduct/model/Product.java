@@ -15,7 +15,15 @@ public class Product {
     @ManyToOne
     private Category category;
     private boolean selected;
+    private String imagePath;
 
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
 
     public boolean isSelected() {
         return selected;

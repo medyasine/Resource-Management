@@ -3,12 +3,12 @@
 <%@ page import="com.example.categoryproduct.model.Category" %>
 <%@ page import="com.example.categoryproduct.formbean.formProduct" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.io.File" %>
 <%
-    List<Product> products = (List<Product>) session.getAttribute("products");
-    List<Category> categories = (List<Category>) session.getAttribute("categories");
-    formProduct formProduct = (formProduct) request.getSession().getAttribute("product");
-    boolean hasProduct = formProduct != null;
-
+    formProduct form = (formProduct) request.getSession().getAttribute("bean");
+    List<Product> products = form.getProducts();
+    List<Category> categories = form.getCategories();
+    boolean hasProduct = form != null;
 %>
 <html>
 <head>
@@ -127,29 +127,29 @@
     <h2>Product Management</h2>
     <!-- Product Form -->
     <div class="form-container">
-        <form action="product-servlet" method="post">
-            <input type="hidden" name="actionKey" value="<%= hasProduct && formProduct.getId() > 0 ? "update" : "add" %>">
-            <input type="hidden" name="id" value="<%= hasProduct ? formProduct.getId() : "" %>">
+        <form action="product-servlet" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="actionKey" value="<%= hasProduct && form.getId() > 0 ? "update" : "add" %>">
+            <input type="hidden" name="id" value="<%= hasProduct ? form.getId() : "" %>">
 
             <!-- Other form fields -->
             <div class="form-group">
                 <label for="nom">Name:</label>
-                <input type="text" id="nom" name="nom" value="<%= hasProduct ? formProduct.getNom() : "" %>" required>
+                <input type="text" id="nom" name="nom" value="<%= hasProduct ? form.getNom() : "" %>" required>
             </div>
 
             <div class="form-group">
                 <label for="description">Description:</label>
-                <textarea id="description" name="description" rows="3" required><%= hasProduct ? formProduct.getDescription() : "" %></textarea>
+                <textarea id="description" name="description" rows="3"><%= hasProduct ? form.getDescription() : "" %></textarea>
             </div>
 
             <div class="form-group">
                 <label for="prix">Price:</label>
-                <input type="number" step="0.01" id="prix" name="prix" value="<%= hasProduct ? formProduct.getPrix() : "" %>" required>
+                <input type="number" step="0.01" id="prix" name="prix" value="<%= hasProduct ? form.getPrix() : "" %>" required>
             </div>
 
             <div class="form-group">
                 <label for="quantite">Quantity:</label>
-                <input type="number" id="quantite" name="quantite" value="<%= hasProduct ? formProduct.getQuantite() : "" %>" required>
+                <input type="number" id="quantite" name="quantite" value="<%= hasProduct ? form.getQuantite() : "" %>" required>
             </div>
 
             <div class="form-group">
@@ -158,8 +158,8 @@
                     <option value="">Select Category</option>
                     <%
                         for(Category category : categories) {
-                            boolean isSelected = hasProduct && formProduct.getCategory() != null &&
-                                    formProduct.getCategory().getId() == category.getId();
+                            boolean isSelected = hasProduct && form.getCategory() != null &&
+                                    form.getCategory().getId() == category.getId();
                     %>
                     <option value="<%=category.getId()%>" <%= isSelected ? "selected" : "" %>>
                         <%=category.getNom()%>
@@ -169,19 +169,32 @@
                     %>
                 </select>
             </div>
+
+            <div class="form-group">
+                <label for="image">Product Image:</label>
+                <input type="file" id="image" name="image" accept="image/*">
+            </div>
+
             <div class="form-group">
                 <label>
-                    <input type="checkbox" name="selected" <%= hasProduct && formProduct.isSelected() ? "checked" : "" %>>
+                    <input type="checkbox" name="selected" <%= hasProduct && form.isSelected() ? "checked" : "" %>>
                     Active
                 </label>
             </div>
+
+
             <button type="submit" class="btn btn-primary">
-                <%= hasProduct && formProduct.getId() > 0 ? "Update" : "Add" %> Product
+                <%= hasProduct && form.getId() > 0 ? "Update" : "Add" %> Product
             </button>
-            <% if (hasProduct && formProduct.getId() > 0) { %>
-            <a href="product-servlet" class="btn btn-warning">Cancel</a>
+
+            <% if (hasProduct && form.getId() > 0) { %>
+            <form action="product-servlet" method="get">
+                <input type="hidden" name="actionKey" value="cancel">
+                <input type="submit" class="btn btn-danger" value="Cancel">
+            </form>
             <% } %>
-        </form>    </div>
+        </form>
+    </div>
 
     <!-- Products Table -->
     <div class="form-group">
@@ -212,19 +225,25 @@
                 for(Product product : products) {
         %>
         <tr>
-            <td><%=product.getId()%></td>
-            <td><%=product.getNom()%></td>
-            <td><%=product.getDescription()%></td>
-            <td><%=product.getPrix()%></td>
-            <td><%=product.getQuantite()%></td>
-            <td><%=product.getCategory().getNom()%></td>
-            <td><%=product.isSelected() ? "Active" : "Inactive"%></td>
+            <td><%= product.getId() %></td>
+            <td><%= product.getNom() %></td>
+            <td><%= product.getDescription() %></td>
+            <td><%= product.getPrix() %></td>
+            <td><%= product.getQuantite() %></td>
+            <td><%= product.getCategory().getNom() %></td>
+            <td><%= product.isSelected() ? "Active" : "Inactive" %></td>
+            <td>
+                <% if (product.getImagePath() != null) { %>
+                <img src="./images/<%= new File(product.getImagePath()).getName() %>" alt="<%= product.getNom() %>" width="100" height="100">
+                <% } else { %>
+                <span>No Image</span>
+                <% } %>
+            </td>
             <td class="action-buttons">
-                <a href="product-servlet?actionKey=edit&id=<%=product.getId()%>"
-                   class="btn btn-warning">Edit</a>
+                <a href="product-servlet?actionKey=edit&id=<%= product.getId() %>" class="btn btn-warning">Edit</a>
                 <form action="product-servlet" method="post" style="display: inline;">
                     <input type="hidden" name="actionKey" value="delete">
-                    <input type="hidden" name="id" value="<%=product.getId()%>">
+                    <input type="hidden" name="id" value="<%= product.getId() %>">
                     <button type="submit" class="btn btn-danger"
                             onclick="return confirm('Are you sure you want to delete this product?')">
                         Delete

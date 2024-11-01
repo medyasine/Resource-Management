@@ -7,6 +7,7 @@ import java.util.List;
 
 public class formProduct {
     private List<Product> products;
+    private List<Category> categories;
     private String actionKey;
     private long id;
     private String nom;
@@ -14,6 +15,14 @@ public class formProduct {
     private double prix;
     private int quantite;
     private boolean selected;
+
+    public List<Category> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
+    }
 
     public boolean isSelected() {
         return selected;
